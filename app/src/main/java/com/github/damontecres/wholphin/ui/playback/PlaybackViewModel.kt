@@ -822,6 +822,13 @@ class PlaybackViewModel
                                 )
                             }
                     }
+                    val assHandler = currentPlayer.value?.assHandler
+                    val subtitleFonts =
+                        if (assHandler != null && transcodeType != PlayMethod.DIRECT_PLAY) {
+                            api.getSubtitleFonts(itemId, source)
+                        } else {
+                            emptyList()
+                        }
                     withContext(WholphinDispatchers.Main) {
                         // TODO, don't need to release & recreate when switching streams
                         this@PlaybackViewModel.activityListener?.let {
@@ -849,6 +856,8 @@ class PlaybackViewModel
                             mediaItem,
                             positionMs,
                         )
+                        // Must be after setMediaItem, which clears any fonts AssHandler has buffered
+                        subtitleFonts.forEach { (name, data) -> assHandler?.addFont(name, data) }
                         val onFailure: () -> Unit = {
                             if (player is MpvPlayer && externalSubtitle != null) {
                                 // MpvPlayer may change tracks more than once to add external subtitles
